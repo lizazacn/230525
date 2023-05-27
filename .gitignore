@@ -1,0 +1,20 @@
+# 前端相关配置
+/web admin/.env.local
+/web admin/.env.*.local
+/web admin/.idea
+/web admin/.vscode
+/web admin/node_modules
+/web admin/npm-debug.log*
+/web admin/yarn-debug.log*
+/web admin/yarn-error.log*
+/web admin/pnpm-debug.log*
+
+/web reception/.env.local
+/web reception/.env.*.local
+/web reception/.idea
+/web reception/.vscode
+/web reception/node_modules
+/web reception/npm-debug.log*
+/web reception/yarn-debug.log*
+/web reception/yarn-error.log*
+/web reception/pnpm-debug.log*
