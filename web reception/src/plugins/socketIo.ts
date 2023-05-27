@@ -2,7 +2,7 @@
 import io from 'socket.io-client'
 
 export default {
-  install: (app: any, { connection, options }: { connection: any; options: any }) => {
+  install: (app: any, { connection, options }: { connection: string; options?: any }) => {
     var socket = io(connection, options)
     app.config.globalProperties.$socket = socket
 

@@ -18,12 +18,10 @@ import { reactive, ref, inject } from 'vue'
 import type { FormInstance } from 'element-plus'
 import { useRouter } from 'vue-router'
 
-import { Socket } from 'socket.io-client';
 
-const socket = inject('socket') as Socket;
+const socket = inject('socket') as any;
 
 const id = inject('id')
-console.log(id);
 
 
 const formRef = ref<FormInstance>()
@@ -35,8 +33,12 @@ const nameValidateForm = reactive({
 
 const handleInputChange = (value: string | number) => {
 
+
+  console.log((window as any).id, 377777);
+
   const obj = {
-    name: value
+    name: value,
+    id: (window as any).id
   }
 
   socket.emit('update', JSON.stringify(obj))
@@ -44,7 +46,7 @@ const handleInputChange = (value: string | number) => {
 
 const submitForm = (formEl: FormInstance | undefined) => {
   if (!formEl) return
-  formEl.validate((valid) => {
+  formEl.validate((valid: any) => {
     if (valid) {
       console.log('submit!')
       router.push({ name: 'page2' })

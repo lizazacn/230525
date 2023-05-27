@@ -9,7 +9,7 @@ const app = createApp(App)
 app.use(router)
 
 app.use(SocketIO, {
-  connection: 'ws://127.0.0.1/client'
+  connection: 'ws://localhost/client'
 })
 
 // 注册elementplus图标
