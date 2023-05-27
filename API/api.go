@@ -1,10 +1,13 @@
 package API
 
 import (
+	"230525/Struct"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	socketio "github.com/googollee/go-socket.io"
 	"log"
 	"net/http"
+	"sync"
 )
 
 // Options 跨域处理
@@ -21,23 +24,44 @@ func Options(context *gin.Context) {
 }
 
 func SocketIO() *socketio.Server {
+	var ConnMap sync.Map
 	server := socketio.NewServer(nil)
-	server.OnConnect("/", func(conn socketio.Conn) error {
+	// 客户端连接，不加入房间，将连接信息存入连接map种
+	server.OnConnect("/client", func(conn socketio.Conn) error {
+		conn.Emit("/connect", conn.ID())
+		return nil
+	})
+	// 管理端连接，全部加入admin房间
+	server.OnConnect("/admin", func(conn socketio.Conn) error {
 		conn.Join("admin")
 		return nil
 	})
-	// 设置用户在线状态
-	server.OnEvent("/", "status", func(s socketio.Conn) {
-		s.Emit("status", true)
+	// 管理员端更新所有用户的状态
+	server.OnEvent("/client", "status", func(conn socketio.Conn, msg string) {
+		// 将所有连接存入ConnMap
+		ConnMap.Store(conn.ID(), conn)
+		server.BroadcastToRoom("/admin", "admin", "status", msg)
 	})
 	// 管理端接收发送的消息
-	server.OnEvent("/", "msg", func(s socketio.Conn, msg string) {
-		s.Emit("msg", msg)
+	server.OnEvent("/client", "msg", func(s socketio.Conn, msg string) {
+		server.BroadcastToRoom("/admin", "admin", "status", msg)
 	})
-	// 输入下一个字段
-	server.OnEvent("/", "next", func(s socketio.Conn, msg string) {
-
-		s.Emit("next", "下一个空间信息")
+	// 让指定用户输入下一个字段
+	server.OnEvent("/admin", "next", func(s socketio.Conn, msg string) {
+		var m = new(Struct.Msg)
+		err := json.Unmarshal([]byte(msg), m)
+		if err != nil {
+			return
+		}
+		m.Status = false
+		marshal, _ := json.Marshal(m)
+		c, ok := ConnMap.Load(m.ID)
+		if !ok || c == nil {
+			server.BroadcastToRoom("/admin", "admin", "status", string(marshal))
+			return
+		}
+		var conn = c.(socketio.Conn)
+		conn.Emit("/next", string(marshal))
 	})
 	// 退出
 	server.OnEvent("/", "bye", func(s socketio.Conn) {
@@ -54,12 +78,12 @@ func SocketIO() *socketio.Server {
 	})
 
 	// 异常处理
-	server.OnError("/", func(s socketio.Conn, e error) {
+	server.OnError("/client", func(s socketio.Conn, e error) {
 		log.Println("error:", e)
 	})
 
 	// 断开连接
-	server.OnDisconnect("/", func(s socketio.Conn, reason string) {
+	server.OnDisconnect("/client", func(s socketio.Conn, reason string) {
 		log.Println("closed", reason)
 	})
 
